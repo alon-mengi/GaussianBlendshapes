@@ -168,9 +168,9 @@ class GaussianModel:
         #if self.optimizer is not None:
         #    self.optimizer.load_state_dict(opt_dict)
 
-    def sample_possion_points(self,v,f,N):
+    def sample_possion_points(self, v, f, N):
         import point_cloud_utils as pcu
-        f_i, bc = pcu.sample_mesh_poisson_disk(v,f,N)
+        f_i, bc = pcu.sample_mesh_poisson_disk(v, f, N)
         print('expect point number %d, get %d' % (N, bc.shape[0]))
         return f_i, bc
 
@@ -239,7 +239,7 @@ class GaussianModel:
         if eye_pose_params is None:
             eye_pose_params = torch.cat([I.clone()] * 2, dim=1)
 
-        betas = torch.cat([shape_params, expression_params], dim=1) # 300 + 100
+        betas = torch.cat([shape_params, expression_params], dim=1)    # 300 + 100
         full_pose = torch.cat([rot_params, neck_pose_params, jaw_pose_params, eye_pose_params], dim=1)
 
         #######################
@@ -407,7 +407,7 @@ class GaussianModel:
             shader=SoftPhongShader(device=args.data_device, lights=self.lights)
         )
 
-    def vis(self, params,  args, visualization): # []
+    def vis(self, params,  args, visualization):
 
         with torch.no_grad():
             self.cameras = params.cameras
@@ -419,7 +419,9 @@ class GaussianModel:
                 expression_params=params.exp,
                 eye_pose_params=params.eyes, # 12
                 jaw_pose_params=params.jaw, # 6
-                eyelid_params=params.eyelids # 2
+                eyelid_params=params.eyelids, # 2
+                trans_params=params.translation if params.translation is not None else None,
+                neck_pose_params=params.neck if params.neck is not None else None
             )
 
             #albedos = self.albedos
@@ -447,18 +449,19 @@ class GaussianModel:
 
             return final_views
 
-    def create_from_face(self, params, args, spatial_lr_scale: float, replace_v = True):
+    def create_from_face(self, params, args, spatial_lr_scale: float, replace_v: bool = True):
 
         self.spatial_lr_scale = spatial_lr_scale
         #fused_point_cloud = torch.tensor(np.asarray(pcd.points)).float().cuda()
 
         ## load canonical object
-        mesh_file = args.flame_template_path #should be canonical mesh
-        faces = load_obj(mesh_file) # Nx3 id int64
+        mesh_file = args.flame_template_path   #should be canonical mesh
+        faces = load_obj(mesh_file)   # Nx3 id int64
         canonical_verts = faces[0]
         self.faces = faces[1].verts_idx.to(args.data_device)
 
         ## load flame
+        # TODO: change passed args to shape dim 100 and exp dim 50
         self.flame = FLAME(args).to(args.data_device)
         args.image_size = params.image_size
         args.actor = args.source_path
@@ -472,11 +475,11 @@ class GaussianModel:
 
         if replace_v:
             from .transforms import get_rest_pose_vertices
-            v = get_rest_pose_vertices(self,params,args).cpu().numpy()
+            v = get_rest_pose_vertices(self, params, args).cpu().numpy()
         else:
             v = canonical_verts.cpu().numpy()
         f = faces[1].verts_idx.cpu().numpy()
-        face_id, barycentric_coord = self.sample_possion_points(v,f, args.init_face_point_number)
+        face_id, barycentric_coord = self.sample_possion_points(v, f, args.init_face_point_number)
         self.face_id = torch.from_numpy(face_id).to(args.data_device)
         self.barycentric_coord = torch.from_numpy(barycentric_coord).to(args.data_device)
 
@@ -486,11 +489,13 @@ class GaussianModel:
 
         with torch.no_grad():
 
+            # NOTE: see here that the number of params is different wrt DVP
             zeros_exp = torch.zeros_like(params.exp)
             zeros_eyes = torch.tensor([[1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0]], dtype=torch.float32).to(args.data_device)
             zeros_jaw = torch.tensor([[1, 0, 0, 0, 1, 0]], dtype=torch.float32).to(args.data_device)
             zeros_eyelids = torch.tensor([[0, 0]], dtype=torch.float32).to(args.data_device)
 
+            # TODO: do I need to add neck (&pose) and/or translation? to compensate for the const camera?
             vertices, _, _ = self.flame(
                 cameras=torch.inverse(params.cameras.R.to(args.data_device)),
                 shape_params=params.shape,
@@ -503,7 +508,7 @@ class GaussianModel:
             #### Create grid for finding nearest triangle
             N_res1 = 256
             #N_res1 = 512
-            path1 = os.path.join(args.source_path,"WeightID_%d.pt" % N_res1)
+            path1 = os.path.join(args.source_path, "WeightID_%d.pt" % N_res1)
             if not os.path.exists(path1):
                 print('gen weight volume id')
                 path1 = None
@@ -515,7 +520,7 @@ class GaussianModel:
             )
             if path1 is None:
                 print('done')
-                path1 = os.path.join(args.source_path,"WeightID_%d.pt" % N_res1)
+                path1 = os.path.join(args.source_path, "WeightID_%d.pt" % N_res1)
                 self.weight_volume_index.dump(path1)
 
             #### Create grid for fetching LBS weights
@@ -539,13 +544,13 @@ class GaussianModel:
 
             ####
 
-            vertices = vertices[0] # BxPx3 -> Px3
+            vertices = vertices[0]   # BxPx3 -> Px3
 
             p_face_id = self.faces[self.face_id]
             v_id_xyz = vertices[p_face_id]
             point_vertices = (v_id_xyz * self.barycentric_coord[..., None]).sum(-2)
 
-            albedos = (torch.rand(point_vertices.shape[0],3)/255.).float().cuda()
+            albedos = (torch.rand(point_vertices.shape[0], 3)/255.).float().cuda()
             #fused_color = RGB2SH(albedos)
             fused_color = albedos
             features = torch.zeros((fused_color.shape[0], 3, (self.max_sh_degree + 1) ** 2)).float().cuda()
@@ -555,15 +560,15 @@ class GaussianModel:
 
             #dist2 = torch.clamp_min(distCUDA2(torch.from_numpy(np.asarray(pcd.points)).float().cuda()), 0.0000001)
             dist2 = torch.clamp_min(distCUDA2(point_vertices), 0.0000001)
-            scales = torch.log(torch.sqrt(dist2))[...,None].repeat(1, 3)
+            scales = torch.log(torch.sqrt(dist2))[..., None].repeat(1, 3)
             rots = torch.zeros((point_vertices.shape[0], 4), device="cuda")
             rots[:, 0] = 1
-            scales_b = torch.zeros(list(scales.shape) + [self.n_total_params],dtype=torch.float,device="cuda")
-            rots_b = torch.zeros(list(rots.shape) + [self.n_total_params],dtype=torch.float,device="cuda")
+            scales_b = torch.zeros(list(scales.shape) + [self.n_total_params], dtype=torch.float, device="cuda")
+            rots_b = torch.zeros(list(rots.shape) + [self.n_total_params], dtype=torch.float, device="cuda")
 
             #opacities = inverse_sigmoid(0.1 * torch.ones((fused_point_cloud.shape[0], 1), dtype=torch.float, device="cuda"))
             opacities = inverse_sigmoid(0.1 * torch.ones((point_vertices.shape[0], 1), dtype=torch.float, device="cuda"))
-            opacities_b = torch.zeros(list(opacities.shape)+[self.n_total_params],dtype=torch.float,device="cuda")
+            opacities_b = torch.zeros(list(opacities.shape)+[self.n_total_params], dtype=torch.float, device="cuda")
 
             xyz_b = torch.zeros((fused_color.shape[0], 3, self.n_total_params)).float().cuda()
 

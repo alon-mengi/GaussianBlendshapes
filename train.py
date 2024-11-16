@@ -9,7 +9,7 @@ import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from utils.loss_utils import l1_loss_pixel, l1_loss, ssim
-from utils.utils import str2bool, dump_code, images_to_video
+from utils.utils import str2bool, dump_code
 from utils.general_utils import safe_state
 from utils.image_utils import psnr
 
@@ -23,35 +23,36 @@ from FLAME.dataset_dyn import FaceDatasetDyn
 from FLAME.dataset_nerfbs import FaceDatasetNerfBS
 import FLAME.face_renderer as f_renderer
 
-#ignore_neck = False
-ignore_neck = True
-max_displacement_of_blendshape0 = 0.005703532602638
-max_displacement_of_blendshape49 = 0.000237277025008
+
+MAX_DISPLACEMENT_BLENDSHAPE_0 = 0.005703532602638
+MAX_DISPLACEMENT_BLENDSHAPE_49 = 0.000237277025008
+IGNORE_NECK = True   # TODO: try changing to False to see how it looks
+DUMP_PROFILER = False   # TODO: try changing to True
 
 torch.set_num_threads(1)
 
-dump_profiler = False
-#dump_profiler = True
-if dump_profiler:
+
+if DUMP_PROFILER:
     import torch.profiler
 
-def mask_function(x,args):
-    threshold = max_displacement_of_blendshape49 * 0.1
-    L = torch.sqrt(torch.clamp(torch.sum(x * x, dim=1),1e-18,None))
-    y = torch.clamp((L-threshold) / (max_displacement_of_blendshape0 - threshold),0,None)
+
+def mask_function(x, args):
+    threshold = MAX_DISPLACEMENT_BLENDSHAPE_49 * 0.1
+    L = torch.sqrt(torch.clamp(torch.sum(x * x, dim=1), 1e-18, None))
+    y = torch.clamp((L-threshold) / (MAX_DISPLACEMENT_BLENDSHAPE_0 - threshold), 0, None)
     return y
 
 
 def config_parse():
     import argparse
     parser = argparse.ArgumentParser(description='Train your network sailor.')
-    parser.add_argument('--sh_degree',type=int,default=config.sh_degree,help='sh level total basis is (D+1)*(D+1)')
-    parser.add_argument('-s','--source_path',type=str,default=config.source_path, help='dataset path')
-    parser.add_argument('-m','--model_path',type=str, default=config.model_path, help='model path')
+    parser.add_argument('--sh_degree', type=int, default=config.sh_degree, help='sh level total basis is (D+1)*(D+1)')
+    parser.add_argument('-s', '--source_path', type=str, default=config.source_path, help='dataset path')
+    parser.add_argument('-m', '--model_path', type=str, default=config.model_path, help='model path')
     parser.add_argument("--white_bkgd", type=str2bool, default=config.white_bkgd, help='set to render synthetic data on a white bkgd (always use for dvoxels)')
-    parser.add_argument("--data_device",type=str,default=config.data_device)
-    parser.add_argument("--reside_image_on_gpu",type=str2bool,default=config.reside_image_on_gpu)
-    parser.add_argument("--use_nerfBS",type=str2bool, default=config.use_nerfBS, help='enable to train on NeRFBlendShape dataset')
+    parser.add_argument("--data_device", type=str, default=config.data_device)
+    parser.add_argument("--reside_image_on_gpu", type=str2bool, default=config.reside_image_on_gpu)
+    parser.add_argument("--use_nerfBS", type=str2bool, default=config.use_nerfBS, help='enable to train on NeRFBlendShape dataset')
     parser.add_argument("--use_HR", type=str2bool, default=config.use_HR, help='use high resolution images')
 
     # optimizer
@@ -61,11 +62,11 @@ def config_parse():
     parser.add_argument("--position_lr_delay_mult", type=float, default=config.position_lr_delay_mult)
     parser.add_argument("--position_lr_max_steps", type=int, default=config.position_lr_max_steps)
 
-    parser.add_argument("--feature_lr",type=float, default=config.feature_lr)
-    parser.add_argument("--opacity_lr",type=float, default=config.opacity_lr)
-    parser.add_argument("--scaling_lr",type=float, default=config.scaling_lr)
-    parser.add_argument("--rotation_lr",type=float, default=config.rotation_lr)
-    parser.add_argument("--percent_dense",type=float, default=config.percent_dense)
+    parser.add_argument("--feature_lr", type=float, default=config.feature_lr)
+    parser.add_argument("--opacity_lr", type=float, default=config.opacity_lr)
+    parser.add_argument("--scaling_lr", type=float, default=config.scaling_lr)
+    parser.add_argument("--rotation_lr", type=float, default=config.rotation_lr)
+    parser.add_argument("--percent_dense", type=float, default=config.percent_dense)
     parser.add_argument("--lambda_dssim", type=float, default=config.lambda_dssim)
 
     parser.add_argument("--densification_interval", type=int, default=config.densification_interval)
@@ -76,8 +77,8 @@ def config_parse():
 
     parser.add_argument("--camera_extent", type=float, default=config.camera_extent)
     parser.add_argument("--convert_SHs_python", type=str2bool, default=config.convert_SHs_python)
-    parser.add_argument("--compute_cov3D_python",type=str2bool, default=config.compute_cov3D_python)
-    parser.add_argument("--debug",type=str2bool,default=False)
+    parser.add_argument("--compute_cov3D_python", type=str2bool, default=config.compute_cov3D_python)
+    parser.add_argument("--debug", type=str2bool, default=False)
 
     parser.add_argument('--debug_from', type=int, default=-1)
     parser.add_argument('--detect_anomaly', action='store_true', default=False)
@@ -94,16 +95,16 @@ def config_parse():
     parser.add_argument('--update_consistency', type=str2bool, default=config.update_consistency)
     parser.add_argument('--init_face_point_number', type=int, default=config.init_face_point_number)
     parser.add_argument('--num_shape_params', type=int, default=config.num_shape_params)
-    parser.add_argument('--num_exp_params',type=int ,default=config.num_exp_params)
+    parser.add_argument('--num_exp_params', type=int, default=config.num_exp_params)
 
-    parser.add_argument('--basis_lr_decay',type=float,default=config.basis_lr_decay)
+    parser.add_argument('--basis_lr_decay', type=float, default=config.basis_lr_decay)
     parser.add_argument('--weight_decay', type=float, default=config.weight_decay)
-    parser.add_argument('--alpha_loss',type=float, default=config.alpha_loss)
+    parser.add_argument('--alpha_loss', type=float, default=config.alpha_loss)
     parser.add_argument('--mouth_loss_weight', type=float, default=config.mouth_loss_weight)
     parser.add_argument('--mouth_loss_type', type=float, default=config.mouth_loss_type)
     parser.add_argument('--cylinder_params', type=object, default=config.cylinder_params)
-    parser.add_argument('--isotropic_loss',type=float, default=config.isotropic_loss)
-    parser.add_argument('--lpips_loss',type=float, default=config.lpips_loss)
+    parser.add_argument('--isotropic_loss', type=float, default=config.isotropic_loss)
+    parser.add_argument('--lpips_loss', type=float, default=config.lpips_loss)
 
     args, unknown = parser.parse_known_args()
 
@@ -111,7 +112,7 @@ def config_parse():
         print(unknown)
         exit(-1)
 
-    args.flame_template_path = os.path.join(args.source_path,"canonical.obj")
+    args.flame_template_path = os.path.join(args.source_path, "canonical.obj")
 
     print("Optimizing " + args.model_path)
 
@@ -123,20 +124,21 @@ def config_parse():
 
     return args
 
+
 def training(args, testing_iterations, checkpoint_iterations, debug_from):
 
     first_iter = 0
     if args.use_nerfBS:
         dataset = FaceDatasetNerfBS(args.source_path, shuffle=False)
-        dataset.prepare_data(reside_image_on_gpu=args.reside_image_on_gpu,device=args.data_device)
+        dataset.prepare_data(reside_image_on_gpu=args.reside_image_on_gpu, device=args.data_device)
     else:
         if args.use_HR:
             dataset = FaceDatasetDyn(args.source_path, shuffle=False, ratio=2.0)
-            dataset.prepare_data(reside_image_on_gpu=args.reside_image_on_gpu,device=args.data_device)
+            dataset.prepare_data(reside_image_on_gpu=args.reside_image_on_gpu, device=args.data_device)
             dataset.load_test_images_in_adv()
         else:
             dataset = FaceDataset(args.source_path, shuffle=False)
-            dataset.prepare_data(reside_image_on_gpu=args.reside_image_on_gpu,device=args.data_device)
+            dataset.prepare_data(reside_image_on_gpu=args.reside_image_on_gpu, device=args.data_device)
     dummy_frame = dataset.output_list[0]
 
     tb_writer = prepare_output_and_logger(args)
@@ -147,20 +149,20 @@ def training(args, testing_iterations, checkpoint_iterations, debug_from):
 
     mouth_file0 = "./data/up_billboard_tri.obj"
     mouth_file1 = "./data/down_billboard_tri.obj"
-    mouth_offsetfile = os.path.join(args.source_path,"offset.txt")
+    mouth_offsetfile = os.path.join(args.source_path, "offset.txt")
     if os.path.exists(mouth_offsetfile):
-        mouth_offset = np.loadtxt(mouth_offsetfile,dtype=np.float32)
+        mouth_offset = np.loadtxt(mouth_offsetfile, dtype=np.float32)
     else:
-        mouth_offset = np.array([3.3226e-4, 2.29566e-3, -1.21933e-3],dtype=np.float32)
+        mouth_offset = np.array([3.3226e-4, 2.29566e-3, -1.21933e-3], dtype=np.float32)   # TODO: this varies per presenter - how do i get it for my custom one?
 
     cylinder_params = args.cylinder_params
     bounding_cylinder = mouth_model.BoundingCylinder(
-        np.array(cylinder_params[:3],dtype=np.float32) + mouth_offset,
+        np.array(cylinder_params[:3], dtype=np.float32) + mouth_offset,
         R=cylinder_params[3], half_H=cylinder_params[4]
     )
 
-    mouth_gaussians_up = mouth_model.GaussianModel(args.sh_degree,0) # up teeth
-    mouth_gaussians_down = mouth_model.GaussianModel(args.sh_degree,1) # down teeth
+    mouth_gaussians_up = mouth_model.GaussianModel(args.sh_degree, 0)   # up teeth
+    mouth_gaussians_down = mouth_model.GaussianModel(args.sh_degree, 1)   # down teeth
 
     ##
     mouth_gaussians_up.create_from_face(mouth_file0, mouth_offset, args, args.camera_extent)
@@ -173,7 +175,7 @@ def training(args, testing_iterations, checkpoint_iterations, debug_from):
     # used to transfer upper teeth
     f_transforms.rigid_transfer(dataset, face_gaussians, args, gen_local_frame=False)
     ## Generate blendshape consistency scalar
-    f_transforms.get_expr_consistency_face(face_gaussians, dummy_frame, mask_function, args, ignore_neck=ignore_neck)
+    f_transforms.get_expr_consistency_face(face_gaussians, dummy_frame, mask_function, args, ignore_neck=IGNORE_NECK)
     ## Generate deformation transfers for each expression blendshape
     f_transforms.get_expr_rot(face_gaussians, dummy_frame, args, light=True)
     ## Get pose blendshapes and eyelid blendshapes
@@ -191,10 +193,10 @@ def training(args, testing_iterations, checkpoint_iterations, debug_from):
     bg_color = [1, 1, 1] if args.white_bkgd else [0, 0, 0]
     background = torch.tensor(bg_color, dtype=torch.float32, device="cuda")
 
-    iter_start = torch.cuda.Event(enable_timing = True)
-    iter_end = torch.cuda.Event(enable_timing = True)
+    iter_start = torch.cuda.Event(enable_timing=True)
+    iter_end = torch.cuda.Event(enable_timing=True)
 
-    if dump_profiler:
+    if DUMP_PROFILER:
         prof = torch.profiler.profile(
             schedule=torch.profiler.schedule(wait=1, warmup=1, active=10, repeat=2),
             on_trace_ready=torch.profiler.tensorboard_trace_handler(args.model_path),
@@ -241,7 +243,7 @@ def training(args, testing_iterations, checkpoint_iterations, debug_from):
         if (iteration - 1) == debug_from:
             args.debug = True
         face_gaussians.prepare_merge(frame)
-        face_gaussians.prepare_xyz(frame,args)
+        face_gaussians.prepare_xyz(frame, args)
 
         mouth_gaussians_up.prepare_xyz(frame,args)
         mouth_gaussians_down.prepare_xyz(frame,args)
@@ -367,20 +369,21 @@ def training(args, testing_iterations, checkpoint_iterations, debug_from):
                 mouth_gaussians_down.optimizer.step()
                 mouth_gaussians_down.optimizer.zero_grad(set_to_none = True)
 
-            if (iteration in checkpoint_iterations):
+            if iteration in checkpoint_iterations:
                 print("\n[ITER {}] Saving Checkpoint".format(iteration))
                 torch.save((face_gaussians.capture(), iteration), args.model_path + "/fix_chkpnt" + str(iteration) + ".pth")
                 face_gaussians.save_acc_dict(args.model_path + "/acc" + str(iteration) + ".npy")
                 torch.save((mouth_gaussians_up.capture(), iteration), args.model_path + "/mouth0_chkpnt" + str(iteration) + ".pth")
                 torch.save((mouth_gaussians_down.capture(), iteration), args.model_path + "/mouth1_chkpnt" + str(iteration) + ".pth")
 
-        if dump_profiler:
+        if DUMP_PROFILER:
             prof.step()
             if iteration == 30:
                 break
 
-    if dump_profiler:
+    if DUMP_PROFILER:
         prof.stop()
+
 
 def prepare_output_and_logger(args):
     if not args.model_path:
@@ -400,6 +403,7 @@ def prepare_output_and_logger(args):
     tb_writer = SummaryWriter(args.model_path)
     return tb_writer
 
+
 def training_report(tb_writer, iteration, Ll1, loss, l1_loss, elapsed, testing_iterations, gaussians, dataset, renderArgs):
     if tb_writer:
         tb_writer.add_scalar('train_loss_patches/l1_loss', Ll1.item(), iteration)
@@ -415,11 +419,12 @@ def training_report(tb_writer, iteration, Ll1, loss, l1_loss, elapsed, testing_i
         else:
             tmp1 = [dataset.getData(o) for o in tmp1]
         tmp2 = dataset.getTrainCameras()
-        tmp2_idx = [o % len(tmp2) for o in range(5,30,5)]
+        tmp2_idx = [o % len(tmp2) for o in range(5, 30, 5)]
         tmp2 = [tmp2[o] for o in tmp2_idx]
         tmp2 = [dataset.getData(o) for o in tmp2]
 
-        validation_configs = ({"name":"test","cameras":tmp1},{"name":"train", "cameras":tmp2})
+        validation_configs = ({"name": "test", "cameras": tmp1},
+                              {"name": "train", "cameras": tmp2})
         del tmp1, tmp2, tmp2_idx
 
         face_gaussians = gaussians[0]
@@ -480,7 +485,7 @@ def training_report(tb_writer, iteration, Ll1, loss, l1_loss, elapsed, testing_i
                             torch.tensor([1.,0.,0.],device="cuda").repeat(pc_numbers[0],1),
                             torch.tensor([0.,1.,0.],device="cuda").repeat(pc_numbers[1],1),
                         ]
-                        mouth_mask =  f_renderer.render(viewpoint, [mouth_gaussians_up, mouth_gaussians_down], *renderArgs, override_color=override_color)["render"]
+                        mouth_mask = f_renderer.render(viewpoint, [mouth_gaussians_up, mouth_gaussians_down], *renderArgs, override_color=override_color)["render"]
                         mouth_mask = torch.clamp(mouth_mask, 0.0, 1.0)
                         tb_writer.add_images(config['name'] + "_view_{}/mouth_mask".format(viewpoint.image_name),mouth_mask, global_step=iteration, dataformats='CHW')
 
@@ -501,6 +506,7 @@ def training_report(tb_writer, iteration, Ll1, loss, l1_loss, elapsed, testing_i
                 tb_writer.add_scalar('total_points_%d' % ii, gaussians[ii].get_xyz.shape[0], iteration)
         torch.cuda.empty_cache()
 
+
 def train():
 
     args = config_parse()
@@ -508,7 +514,7 @@ def train():
     # Initialize system state (RNG)
     safe_state(args.quiet)
 
-    os.makedirs(args.model_path,exist_ok=True)
+    os.makedirs(args.model_path, exist_ok=True)
     dump_code(os.path.dirname(os.path.abspath(__file__)), args.model_path)
 
     torch.autograd.set_detect_anomaly(args.detect_anomaly)
@@ -521,3 +527,6 @@ def train():
 if __name__ == "__main__":
     train()
 
+    # a = torch.load('/data/repos/GaussianBlendshapes/pre-processed-data/justin/checkpoint/02449.frame')
+    # b = torch.load('/data/repos/GaussianBlendshapes/pre-processed-data/justin/checkpoint/00000.frame')
+    # print('success')

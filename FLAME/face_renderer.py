@@ -82,6 +82,13 @@ def render(viewpoint_camera, pcs: List[GaussianModel], pipe,
     rasterizer = GaussianRasterizer(raster_settings=raster_settings)
 
     means3D = xyz
+
+    # TODO: revisit this - change Amitay suggested
+    means3D[:, 1] = -means3D[:, 1]
+    means3D[:, 2] = -means3D[:, 2]
+    means3D[:, 2] = means3D[:, 2] + 3
+
+    # TODO: do I need to change the 2D ?
     means2D = screenspace_points
     #opacity = opacity
 
@@ -96,12 +103,6 @@ def render(viewpoint_camera, pcs: List[GaussianModel], pipe,
             dir_pp_normalized = dir_pp / dir_pp.norm(dim=1,keepdim=True)
             sh2rgb = eval_sh(pcs[0].active_sh_degree, shs_view, dir_pp_normalized)
             colors_precomp = torch.clamp_min(sh2rgb + 0.5, 0.0)
-
-            # shs_view = pc.get_features.transpose(1, 2).view(-1, 3, (pc.max_sh_degree + 1) ** 2)
-            # dir_pp = (pc.get_xyz - viewpoint_camera.camera_center.repeat(pc.get_features.shape[0], 1))
-            # dir_pp_normalized = dir_pp / dir_pp.norm(dim=1, keepdim=True)
-            # sh2rgb = eval_sh(pc.active_sh_degree, shs_view, dir_pp_normalized)
-            # colors_precomp = torch.clamp_min(sh2rgb + 0.5, 0.0)
         else:
             shs = features
     else:
@@ -203,6 +204,12 @@ def render_alpha(viewpoint_camera, pcs: List[GaussianModel], pipe,
     rasterizer = GaussianRasterizer(raster_settings=raster_settings)
 
     means3D = xyz
+    # TODO: revisit this - change Amitay suggested
+    means3D[:, 1] = -means3D[:, 1]
+    means3D[:, 2] = -means3D[:, 2]
+    means3D[:, 2] = means3D[:, 2] + 3
+
+
     means2D = screenspace_points
     # opacity = opacity
 
@@ -217,12 +224,6 @@ def render_alpha(viewpoint_camera, pcs: List[GaussianModel], pipe,
             dir_pp_normalized = dir_pp / dir_pp.norm(dim=1, keepdim=True)
             sh2rgb = eval_sh(pcs[0].active_sh_degree, shs_view, dir_pp_normalized)
             colors_precomp = torch.clamp_min(sh2rgb + 0.5, 0.0)
-
-            # shs_view = pc.get_features.transpose(1, 2).view(-1, 3, (pc.max_sh_degree + 1) ** 2)
-            # dir_pp = (pc.get_xyz - viewpoint_camera.camera_center.repeat(pc.get_features.shape[0], 1))
-            # dir_pp_normalized = dir_pp / dir_pp.norm(dim=1, keepdim=True)
-            # sh2rgb = eval_sh(pc.active_sh_degree, shs_view, dir_pp_normalized)
-            # colors_precomp = torch.clamp_min(sh2rgb + 0.5, 0.0)
         else:
             shs = features
     else:

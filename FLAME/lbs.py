@@ -237,7 +237,7 @@ def lbs_jaw(betas, pose, v_template, shapedirs, posedirs, J_regressor, parents,
     # 4. Get the global joint location
     J_transformed, A = batch_rigid_transform(rot_mats, J, parents, dtype=dtype)
 
-    final_trans = A[0,0] * 1.30787707e-02 + A[0,1] * 4.26467828e-02 + A[0,2] * 9.44269622e-01
+    final_trans = A[0, 0] * 1.30787707e-02 + A[0, 1] * 4.26467828e-02 + A[0, 2] * 9.44269622e-01
     return final_trans
 
 def lbs(betas, pose, v_template, shapedirs, posedirs, J_regressor, parents,
@@ -293,6 +293,7 @@ def lbs(betas, pose, v_template, shapedirs, posedirs, J_regressor, parents,
     # 3. Add pose blend shapes
     # N x J x 3 x 3
     ident = torch.eye(3, dtype=dtype, device=device)
+    # TODO: address this - I can pass the 3 params as is (i,e, no pose2rot)
     if pose2rot:
         # rot_mats = batch_rodrigues(pose.view(-1, 3), dtype=dtype).view([batch_size, -1, 3, 3])
         rot_mats = rotation_6d_to_matrix(pose.view(-1, 6)).view([batch_size, -1, 3, 3])
@@ -304,8 +305,7 @@ def lbs(betas, pose, v_template, shapedirs, posedirs, J_regressor, parents,
         pose_feature = pose[:, 1:].view(batch_size, -1, 3, 3) - ident
         rot_mats = pose.view(batch_size, -1, 3, 3)
 
-        pose_offsets = torch.matmul(pose_feature.view(batch_size, -1),
-                                    posedirs).view(batch_size, -1, 3)
+        pose_offsets = torch.matmul(pose_feature.view(batch_size, -1), posedirs).view(batch_size, -1, 3)
 
     v_posed = pose_offsets + v_shaped
     # 4. Get the global joint location

@@ -89,6 +89,7 @@ def get_eyelid_tensor(face_gaussians, dummy_frame, mask_func, args):
     zeros_jaw = torch.tensor([[1, 0, 0, 0, 1, 0]], dtype=torch.float32).to(args.data_device)
     zeros_eyelids = torch.tensor([[0, 0]], dtype=torch.float32).to(args.data_device)
 
+    # TODO: do I need to add neck (&pose) and/or translation? to compensate for the const camera?
     vertices_neutral, _, _ = flame(
         cameras=torch.inverse(dummy_frame.cameras.R.to(args.data_device)),
         shape_params=dummy_frame.shape,
@@ -103,7 +104,8 @@ def get_eyelid_tensor(face_gaussians, dummy_frame, mask_func, args):
     for eyelid_id in range(2):
         zeros_eyelids = torch.zeros_like(zeros_eyelids)
         zeros_eyelids[0,eyelid_id] = 1.
-        vertices_eyelid,_,_ = flame(
+        # TODO: do I need to add neck (&pose) and/or translation? to compensate for the const camera?
+        vertices_eyelid, _, _ = flame(
             cameras=torch.inverse(dummy_frame.cameras.R.to(args.data_device)),
             shape_params=dummy_frame.shape,
             expression_params=zeros_exp,
@@ -197,6 +199,7 @@ def get_expr_consistency_face(face_gaussians, dummy_frame, mask_func, args, igno
     zeros_jaw = torch.tensor([[1, 0, 0, 0, 1, 0]], dtype=torch.float32).to(args.data_device)
     zeros_eyelids = torch.tensor([[0, 0]], dtype=torch.float32).to(args.data_device)
 
+    # TODO: do I need to add neck (&pose) and/or translation? to compensate for the const camera?
     vertices_neutral, _, _ = flame(
         cameras=torch.inverse(dummy_frame.cameras.R.to(args.data_device)),
         shape_params=dummy_frame.shape,
@@ -211,6 +214,7 @@ def get_expr_consistency_face(face_gaussians, dummy_frame, mask_func, args, igno
     for exp_id in range(100):
         zeros_exp = torch.zeros_like(dummy_frame.exp)
         zeros_exp[0, exp_id] = 1.
+        # TODO: do I need to add neck (&pose) and/or translation? to compensate for the const camera?
         vertices_exp, _, _ = flame(
             cameras=torch.inverse(dummy_frame.cameras.R.to(args.data_device)),
             shape_params=dummy_frame.shape,
@@ -260,6 +264,7 @@ def get_expr_tensor(face_gaussians, dummy_frame, mask_func, args):
     zeros_jaw = torch.tensor([[1, 0, 0, 0, 1, 0]], dtype=torch.float32).to(args.data_device)
     zeros_eyelids = torch.tensor([[0, 0]], dtype=torch.float32).to(args.data_device)
 
+    # TODO: do I need to add neck (&pose) and/or translation? to compensate for the const camera?
     vertices_neutral, _, _ = flame(
         cameras=torch.inverse(dummy_frame.cameras.R.to(args.data_device)),
         shape_params=dummy_frame.shape,
@@ -274,7 +279,8 @@ def get_expr_tensor(face_gaussians, dummy_frame, mask_func, args):
     for exp_id in range(100):
 
         zeros_exp = torch.zeros_like(dummy_frame.exp)
-        zeros_exp[0,exp_id] = 1.
+        zeros_exp[0, exp_id] = 1.
+        # TODO: do I need to add neck (&pose) and/or translation? to compensate for the const camera?
         vertices_exp, _, _ = flame(
             cameras=torch.inverse(dummy_frame.cameras.R.to(args.data_device)),
             shape_params=dummy_frame.shape,
@@ -315,6 +321,7 @@ def get_expr_rot(face_gaussians, dummy_frame, args, light=False):
     zeros_jaw = torch.tensor([[1, 0, 0, 0, 1, 0]], dtype=torch.float32).to(args.data_device)
     zeros_eyelids = torch.tensor([[0, 0]], dtype=torch.float32).to(args.data_device)
 
+    # TODO: do I need to add neck (&pose) and/or translation? to compensate for the const camera?
     vertices_neutral, _, _ = flame(
         cameras=torch.inverse(dummy_frame.cameras.R.to(args.data_device)),
         shape_params=dummy_frame.shape,
@@ -333,6 +340,7 @@ def get_expr_rot(face_gaussians, dummy_frame, args, light=False):
     for exp_id in range(100):
         zeros_exp = torch.zeros_like(dummy_frame.exp)
         zeros_exp[0, exp_id] = 1.
+        # TODO: do I need to add neck (&pose) and/or translation? to compensate for the const camera?
         vertices_exp, _, _ = flame(
             cameras=torch.inverse(dummy_frame.cameras.R.to(args.data_device)),
             shape_params=dummy_frame.shape,
@@ -386,15 +394,16 @@ def get_rest_pose_vertices(face_gaussians, dummy_frame, args):
     zeros_jaw = torch.tensor([[1, 0, 0, 0, 1, 0]], dtype=torch.float32).to(args.data_device)
     zeros_eyelids = torch.tensor([[0, 0]], dtype=torch.float32).to(args.data_device)
 
+    # TODO: do I need to add neck (&pose) and/or translation? to compensate for the const camera?
     vertices0, _, _ = flame(
-        cameras = torch.inverse(dummy_frame.cameras.R.to(args.data_device)),
-        shape_params = dummy_frame.shape,
+        cameras=torch.inverse(dummy_frame.cameras.R.to(args.data_device)),
+        shape_params=dummy_frame.shape,
         expression_params=zeros_exp,
         eye_pose_params=zeros_eyes,
         jaw_pose_params=zeros_jaw,
         eyelid_params=zeros_eyelids
     )
-    vertices0 = vertices0[0] # BxPx3 -> Px3
+    vertices0 = vertices0[0]   # BxPx3 -> Px3
     return vertices0
 
 
@@ -516,9 +525,10 @@ def rigid_transfer(dataset, model, args, gen_local_frame = True, gpu_side = True
     zeros_jaw = torch.tensor([[1, 0, 0, 0, 1, 0]], dtype=torch.float32).to(args.data_device)
     zeros_eyelids = torch.tensor([[0, 0]], dtype=torch.float32).to(args.data_device)
 
+    # TODO: do I need to add neck (&pose) and/or translation? to compensate for the const camera?
     vertices0, _, _ = flame(
-        cameras = torch.inverse(dummy_frame.cameras.R.to(args.data_device)),
-        shape_params = dummy_frame.shape,
+        cameras=torch.inverse(dummy_frame.cameras.R.to(args.data_device)),
+        shape_params=dummy_frame.shape,
         expression_params=zeros_exp,
         eye_pose_params=zeros_eyes,
         jaw_pose_params=zeros_jaw,
@@ -542,7 +552,9 @@ def rigid_transfer(dataset, model, args, gen_local_frame = True, gpu_side = True
             expression_params=params.exp,
             eye_pose_params=params.eyes,  # 12
             jaw_pose_params=params.jaw,  # 6
-            eyelid_params=params.eyelids  # 2
+            eyelid_params=params.eyelids,  # 2
+            trans_params=params.translation if params.translation is not None else None,
+            neck_pose_params=params.neck if params.neck is not None else None
         )
         vertices = vertices[0] # BxPx3 -> Px3
         #vertices_frame = vertices.cpu().detach().numpy()

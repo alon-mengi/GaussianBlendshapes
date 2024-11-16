@@ -150,12 +150,12 @@ def render_set(model_path, name, iteration, views, gaussians, args, background):
             image = rendering['render']
             alpha0 = rendering['alpha0']
             image = image + (1-alpha0) * bkg # image with background
-            image = image.permute(1,2,0)
+            image = image.permute(1, 2, 0)
             image = to_image(image)
         else:
             gt = view.original_image[:, :, 0:3] * view.mask[:, :, None]
             gt = to_image(gt)
-            image = rendering['render'].permute(1,2,0)
+            image = rendering['render'].permute(1, 2, 0)
             image = to_image(image)
         vis = face_gaussians.vis(view, args, [f_gaussian_model.View.SHAPE])
         shape = to_image(vis[0])

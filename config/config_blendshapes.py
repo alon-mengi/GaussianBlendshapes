@@ -1,10 +1,12 @@
 
 # model
 
-sh_degree = 3
-source_path = None
-model_path = None
+# source_path = '/data/repos/GaussianBlendshapes/pre-processed-data/justin'
+# model_path = '/data/repos/GaussianBlendshapes/output/face/justin-trial-3'
+source_path = '/data/repos/GaussianBlendshapes/pre-processed-data/viktoria'
+model_path = '/data/repos/GaussianBlendshapes/output/face/viktoria-trial-4'
 
+sh_degree = 3
 white_bkgd = False
 data_device = "cuda:0"
 

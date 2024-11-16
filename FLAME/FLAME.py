@@ -61,7 +61,7 @@ class FLAME(nn.Module):
     """
     borrowed from https://github.com/soubhiksanyal/FLAME_PyTorch/blob/master/FLAME.py
     Given FLAME parameters for shape, pose, and expression, this class generates a differentiable FLAME function
-    which outputs the a mesh and 2D/3D facial landmarks
+    which outputs the mesh and 2D/3D facial landmarks
     """
 
     def __init__(self, config):
@@ -215,7 +215,7 @@ class FLAME(nn.Module):
             expression_params = self.expression_params.expand(batch_size, -1)
 
         # Concatenate identity shape and expression parameters
-        betas = torch.cat([shape_params, expression_params], dim=1)
+        betas = torch.cat([shape_params, expression_params], dim=1).float()
 
         # The pose vector contains global rotation, and neck, jaw, and eyeball rotations
         full_pose = torch.cat([rot_params, neck_pose_params, jaw_pose_params, eye_pose_params], dim=1)
@@ -251,7 +251,7 @@ class FLAME(nn.Module):
             expression_params = self.expression_params.expand(batch_size, -1)
 
         # Concatenate identity shape and expression parameters
-        betas = torch.cat([shape_params, expression_params], dim=1)
+        betas = torch.cat([shape_params, expression_params], dim=1).float()
 
         # The pose vector contains global rotation, and neck, jaw, and eyeball rotations
         full_pose = torch.cat([rot_params, neck_pose_params, jaw_pose_params, eye_pose_params], dim=1)
@@ -302,7 +302,7 @@ class FLAME(nn.Module):
             expression_params = self.expression_params.expand(batch_size, -1)
 
         # Concatenate identity shape and expression parameters
-        betas = torch.cat([shape_params, expression_params], dim=1)
+        betas = torch.cat([shape_params, expression_params], dim=1).float()
 
         # The pose vector contains global rotation, and neck, jaw, and eyeball rotations
         full_pose = torch.cat([rot_params, neck_pose_params, jaw_pose_params, eye_pose_params], dim=1)
@@ -310,7 +310,7 @@ class FLAME(nn.Module):
         # FLAME models shape and expression deformations as vertex offset from the mean face in 'zero pose', called v_template
         template_vertices = self.v_template.unsqueeze(0).expand(batch_size, -1, -1)
 
-        # Use linear blendskinning to model pose roations
+        # Use linear blendskinning to model pose rotations
         vertices, _ = lbs(betas, full_pose, template_vertices,
                           self.shapedirs, self.posedirs,
                           self.J_regressor, self.parents,
