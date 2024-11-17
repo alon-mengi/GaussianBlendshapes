@@ -4,6 +4,7 @@ import uuid
 from tqdm import tqdm
 from argparse import Namespace
 import random
+import gc
 
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -380,6 +381,8 @@ def training(args, testing_iterations, checkpoint_iterations, debug_from):
             prof.step()
             if iteration == 30:
                 break
+        torch.cuda.empty_cache()
+        gc.collect()
 
     if DUMP_PROFILER:
         prof.stop()

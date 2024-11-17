@@ -108,7 +108,7 @@ class FaceDataset:
         if 'neck' in frame_flame.keys():
             output.neck = torch.from_numpy(frame_flame['neck']).to(device)
         if 'pose' in frame_flame.keys():
-            output.neck = torch.from_numpy(frame_flame['pose']).to(device)
+            output.pose = torch.from_numpy(frame_flame['pose']).to(device)
         if 'translation' in frame_flame.keys():
             output.translation = torch.from_numpy(frame_flame['translation']).to(device)
 
@@ -118,7 +118,7 @@ class FaceDataset:
         w2c = np.zeros([4, 4])
         w2c[3, 3] = 1
         w2c[:3, :3] = frame_opencv['R'][0]
-        w2c[:3, 3] = frame_opencv['t'][0]   # TODO: validate how this argument relates to the means3D shift (3 meters) Amitay suggested
+        w2c[:3, 3] = frame_opencv['t'][0]
 
         c2w = np.linalg.inv(w2c)
 

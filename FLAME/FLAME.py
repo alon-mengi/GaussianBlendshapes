@@ -124,6 +124,12 @@ class FLAME(nn.Module):
             curr_idx = self.parents[curr_idx]
         self.register_buffer('neck_kin_chain', torch.stack(neck_kin_chain))
 
+    def to_pytroch3d_convention(self, vertices: torch.Tensor) -> torch.Tensor:
+        vertices[:, :, 0] = -vertices[:, :, 0]
+        vertices[:, :, 2] = -vertices[:, :, 2]
+        vertices[:, :, 2] = vertices[:, :, 2] + 3
+        return vertices
+
     def _find_dynamic_lmk_idx_and_bcoords(self, vertices, pose, dynamic_lmk_faces_idx,
                                           dynamic_lmk_b_coords,
                                           neck_kin_chain, cameras, dtype=torch.float32):
@@ -193,7 +199,6 @@ class FLAME(nn.Module):
 
         return landmarks
 
-
     def get_transfer(self,  shape_params, cameras, trans_params=None, rot_params=None, neck_pose_params=None, jaw_pose_params=None, eye_pose_params=None, expression_params=None, eyelid_params=None):
         batch_size = shape_params.shape[0]
 
@@ -225,9 +230,9 @@ class FLAME(nn.Module):
 
         # Use linear blendskinning to model pose roations
         J_transformed, A = lbs_trans(betas, full_pose, template_vertices,
-                              self.shapedirs, self.posedirs,
-                              self.J_regressor, self.parents,
-                              self.lbs_weights, dtype=self.dtype)
+                                     self.shapedirs, self.posedirs,
+                                     self.J_regressor, self.parents,
+                                     self.lbs_weights, dtype=self.dtype)
         return J_transformed, A
 
     def get_jaw_transfer(self, shape_params, cameras, trans_params=None, rot_params=None, neck_pose_params=None, jaw_pose_params=None, eye_pose_params=None, expression_params=None, eyelid_params=None):
@@ -320,6 +325,9 @@ class FLAME(nn.Module):
             vertices = vertices + self.r_eyelid.expand(batch_size, -1, -1) * eyelid_params[:, 1:2, None]
             vertices = vertices + self.l_eyelid.expand(batch_size, -1, -1) * eyelid_params[:, 0:1, None]
 
+        vertices = vertices + trans_params.unsqueeze(dim=1)
+        vertices = self.to_pytroch3d_convention(vertices)
+
         lmk_faces_idx = self.lmk_faces_idx.unsqueeze(dim=0).expand(batch_size, -1).contiguous()
         lmk_bary_coords = self.lmk_bary_coords.unsqueeze(dim=0).expand(batch_size, -1, -1).contiguous()
 
@@ -338,7 +346,7 @@ class FLAME(nn.Module):
 
         mp = self._vertices2landmarks(vertices, self.faces, mp_lmk_faces_idx, mp_lmk_bary_coords)
 
-        vertices = vertices + trans_params.unsqueeze(dim=1)
+        # vertices = vertices + trans_params.unsqueeze(dim=1)
         lmk68 = lmk68 + trans_params.unsqueeze(dim=1)
         mp = mp + trans_params.unsqueeze(dim=1)
 

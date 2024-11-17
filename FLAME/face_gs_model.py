@@ -217,9 +217,11 @@ class GaussianModel:
     def run_blendshape(self, xyz, params):
 
         shape_params = params.shape
-        trans_params = None
+        trans_params = params.translation if hasattr(params, 'translation') else None
+        # trans_params = None
         rot_params = None
-        neck_pose_params = None
+        neck_pose_params = params.neck if hasattr(params, 'neck') else None
+        # neck_pose_params = None
         jaw_pose_params = params.jaw
         eye_pose_params = params.eyes
         expression_params = params.exp
@@ -298,6 +300,7 @@ class GaussianModel:
 
         vertices = verts
         vertices = vertices + trans_params.unsqueeze(dim=1)
+        # TODO: add the means3D like offset here?
         return vertices, T_diff, processed_rotation, processed_features
 
 
@@ -420,8 +423,8 @@ class GaussianModel:
                 eye_pose_params=params.eyes, # 12
                 jaw_pose_params=params.jaw, # 6
                 eyelid_params=params.eyelids, # 2
-                trans_params=params.translation if params.translation is not None else None,
-                neck_pose_params=params.neck if params.neck is not None else None
+                trans_params=params.translation if hasattr(params, 'translation') else None,
+                neck_pose_params=params.neck if hasattr(params, 'neck') else None
             )
 
             #albedos = self.albedos
@@ -502,7 +505,9 @@ class GaussianModel:
                 expression_params=zeros_exp,
                 eye_pose_params=zeros_eyes, # 12
                 jaw_pose_params=zeros_jaw, # 6
-                eyelid_params=zeros_eyelids # 2
+                eyelid_params=zeros_eyelids, # 2
+                trans_params=params.translation if hasattr(params, 'translation') else None,
+                neck_pose_params=params.neck if hasattr(params, 'neck') else None
             )
 
             #### Create grid for finding nearest triangle

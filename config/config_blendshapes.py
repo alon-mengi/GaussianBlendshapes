@@ -3,8 +3,12 @@
 
 # source_path = '/data/repos/GaussianBlendshapes/pre-processed-data/justin'
 # model_path = '/data/repos/GaussianBlendshapes/output/face/justin-trial-3'
-source_path = '/data/repos/GaussianBlendshapes/pre-processed-data/viktoria'
-model_path = '/data/repos/GaussianBlendshapes/output/face/viktoria-trial-4'
+
+# source_path = '/data/repos/GaussianBlendshapes/pre-processed-data/viktoria'
+# model_path = '/data/repos/GaussianBlendshapes/output/face/viktoria-trial-5'
+
+source_path = '/data/repos/GaussianBlendshapes/pre-processed-data/Leona'
+model_path = '/data/repos/GaussianBlendshapes/output/face/Leona-trial-5'
 
 sh_degree = 3
 white_bkgd = False
@@ -45,7 +49,7 @@ convert_SHs_python = False
 compute_cov3D_python = False
 debug = False
 
-test_iterations = [1,3000,10000,20000,30000,40000]
+test_iterations = [1,2500,5000,7500,10000,12500,15000,17500,20000,22500,25000,27500,30000,32500,35000,37500,40000]
 #save_iterations = [7_000, 30_000]
 checkpoint_iterations = [40_000]
 

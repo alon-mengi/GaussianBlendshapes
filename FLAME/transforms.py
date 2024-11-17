@@ -96,7 +96,9 @@ def get_eyelid_tensor(face_gaussians, dummy_frame, mask_func, args):
         expression_params=zeros_exp,
         eye_pose_params=zeros_eyes,  # 12
         jaw_pose_params=zeros_jaw,  # 6
-        eyelid_params=zeros_eyelids  # 2
+        eyelid_params=zeros_eyelids,  # 2
+        # trans_params=dummy_frame.translation if hasattr(dummy_frame, 'translation') else None,
+        neck_pose_params=dummy_frame.neck if hasattr(dummy_frame, 'neck') else None
     )
     vertices_neutral = vertices_neutral[0].cpu().detach().numpy()
 
@@ -111,7 +113,9 @@ def get_eyelid_tensor(face_gaussians, dummy_frame, mask_func, args):
             expression_params=zeros_exp,
             eye_pose_params=zeros_eyes,  # 12
             jaw_pose_params=zeros_jaw,  # 6
-            eyelid_params=zeros_eyelids  # 2
+            eyelid_params=zeros_eyelids,  # 2
+            # trans_params=dummy_frame.translation if hasattr(dummy_frame, 'translation') else None,
+            neck_pose_params=dummy_frame.neck if hasattr(dummy_frame, 'neck') else None
         )
 
         vertices_eyelid = vertices_eyelid[0].cpu().detach().numpy()
@@ -206,7 +210,9 @@ def get_expr_consistency_face(face_gaussians, dummy_frame, mask_func, args, igno
         expression_params=zeros_exp,
         eye_pose_params=zeros_eyes,  # 12
         jaw_pose_params=zeros_jaw,  # 6
-        eyelid_params=zeros_eyelids  # 2
+        eyelid_params=zeros_eyelids,  # 2
+        # trans_params=dummy_frame.translation if hasattr(dummy_frame, 'translation') else None,
+        neck_pose_params=dummy_frame.neck if hasattr(dummy_frame, 'neck') else None
     )
     vertices_neutral = vertices_neutral[0].cpu().detach().numpy()
 
@@ -221,7 +227,9 @@ def get_expr_consistency_face(face_gaussians, dummy_frame, mask_func, args, igno
             expression_params=zeros_exp,
             eye_pose_params=zeros_eyes,  # 12
             jaw_pose_params=zeros_jaw,  # 6
-            eyelid_params=zeros_eyelids  # 2
+            eyelid_params=zeros_eyelids,  # 2
+            # trans_params=dummy_frame.translation if hasattr(dummy_frame, 'translation') else None,
+            neck_pose_params=dummy_frame.neck if hasattr(dummy_frame, 'neck') else None
         )
 
         vertices_exp = vertices_exp[0].cpu().detach().numpy()
@@ -271,9 +279,11 @@ def get_expr_tensor(face_gaussians, dummy_frame, mask_func, args):
         expression_params=zeros_exp,
         eye_pose_params=zeros_eyes,  # 12
         jaw_pose_params=zeros_jaw,  # 6
-        eyelid_params=zeros_eyelids  # 2
+        eyelid_params=zeros_eyelids,  # 2
+        # trans_params=dummy_frame.translation if hasattr(dummy_frame, 'translation') else None,
+        neck_pose_params=dummy_frame.neck if hasattr(dummy_frame, 'neck') else None
     )
-    vertices_neutral =  vertices_neutral[0].cpu().detach().numpy()
+    vertices_neutral = vertices_neutral[0].cpu().detach().numpy()
 
     transfer_tensor = []
     for exp_id in range(100):
@@ -287,7 +297,9 @@ def get_expr_tensor(face_gaussians, dummy_frame, mask_func, args):
             expression_params=zeros_exp,
             eye_pose_params=zeros_eyes,  # 12
             jaw_pose_params=zeros_jaw,  # 6
-            eyelid_params=zeros_eyelids  # 2
+            eyelid_params=zeros_eyelids,  # 2
+            # trans_params=dummy_frame.translation if hasattr(dummy_frame, 'translation') else None,
+            neck_pose_params=dummy_frame.neck if hasattr(dummy_frame, 'neck') else None
         )
 
         vertices_exp = vertices_exp[0].cpu().detach().numpy()
@@ -328,7 +340,9 @@ def get_expr_rot(face_gaussians, dummy_frame, args, light=False):
         expression_params=zeros_exp,
         eye_pose_params=zeros_eyes,  # 12
         jaw_pose_params=zeros_jaw,  # 6
-        eyelid_params=zeros_eyelids  # 2
+        eyelid_params=zeros_eyelids,  # 2
+        # trans_params=dummy_frame.translation if hasattr(dummy_frame, 'translation') else None,
+        neck_pose_params=dummy_frame.neck if hasattr(dummy_frame, 'neck') else None
     )
     vertices_neutral = vertices_neutral[0]
     v_id_xyz0 = vertices_neutral[faces]
@@ -347,7 +361,9 @@ def get_expr_rot(face_gaussians, dummy_frame, args, light=False):
             expression_params=zeros_exp,
             eye_pose_params=zeros_eyes,  # 12
             jaw_pose_params=zeros_jaw,  # 6
-            eyelid_params=zeros_eyelids  # 2
+            eyelid_params=zeros_eyelids,  # 2
+            # trans_params=dummy_frame.translation if hasattr(dummy_frame, 'translation') else None,
+            neck_pose_params=dummy_frame.neck if hasattr(dummy_frame, 'neck') else None
         )
         vertices_exp = vertices_exp[0] # Nx3
         v_id_xyz = vertices_exp[faces]
@@ -401,7 +417,9 @@ def get_rest_pose_vertices(face_gaussians, dummy_frame, args):
         expression_params=zeros_exp,
         eye_pose_params=zeros_eyes,
         jaw_pose_params=zeros_jaw,
-        eyelid_params=zeros_eyelids
+        eyelid_params=zeros_eyelids,
+        trans_params=dummy_frame.translation if hasattr(dummy_frame, 'translation') else None,
+        neck_pose_params=dummy_frame.neck if hasattr(dummy_frame, 'neck') else None
     )
     vertices0 = vertices0[0]   # BxPx3 -> Px3
     return vertices0
@@ -477,8 +495,9 @@ def rigid_transfer_for_mouth2(dataset, model, args):
     zeros_jaw = torch.tensor([[1, 0, 0, 0, 1, 0]], dtype=torch.float32).to(args.data_device)
     zeros_eyelids = torch.tensor([[0, 0]], dtype=torch.float32).to(args.data_device)
 
+    # TODO: pass neck / translation here?
     jawTrans0 = flame.get_jaw_transfer(
-        cameras = torch.inverse(dummy_frame.cameras.R.to(args.data_device)),
+        cameras=torch.inverse(dummy_frame.cameras.R.to(args.data_device)),
         shape_params=dummy_frame.shape,
         expression_params=zeros_exp,
         eye_pose_params=zeros_eyes,
@@ -489,7 +508,7 @@ def rigid_transfer_for_mouth2(dataset, model, args):
 
     output_list = dataset.output_list
     for params in tqdm(output_list):
-
+        # TODO: pass neck / translation here?
         jawTrans = flame.get_jaw_transfer(
             cameras=torch.inverse(params.cameras.R.to(args.data_device)),
             shape_params=params.shape,
@@ -532,7 +551,9 @@ def rigid_transfer(dataset, model, args, gen_local_frame = True, gpu_side = True
         expression_params=zeros_exp,
         eye_pose_params=zeros_eyes,
         jaw_pose_params=zeros_jaw,
-        eyelid_params=zeros_eyelids
+        eyelid_params=zeros_eyelids,
+        trans_params=dummy_frame.translation if hasattr(dummy_frame, 'translation') else None,
+        neck_pose_params=dummy_frame.neck if hasattr(dummy_frame, 'neck') else None
     )
     vertices0 = vertices0[0] # BxPx3 -> Px3
     points_neutral = vertices0[back_head_vertex_idx]
@@ -553,8 +574,8 @@ def rigid_transfer(dataset, model, args, gen_local_frame = True, gpu_side = True
             eye_pose_params=params.eyes,  # 12
             jaw_pose_params=params.jaw,  # 6
             eyelid_params=params.eyelids,  # 2
-            trans_params=params.translation if params.translation is not None else None,
-            neck_pose_params=params.neck if params.neck is not None else None
+            trans_params=params.translation if hasattr(params, 'translation') else None,
+            neck_pose_params=params.neck if hasattr(params, 'neck') else None
         )
         vertices = vertices[0] # BxPx3 -> Px3
         #vertices_frame = vertices.cpu().detach().numpy()
@@ -636,6 +657,7 @@ def from_mesh_to_point(dataset, model, args, merge_iden=True):
     zeros_eyelids = torch.tensor([[0, 0]], dtype=torch.float32).to(args.data_device)
 
     dummy_frame = output_list[0]
+    # TODO: pass neck / translation here?
     J_transformed0, A0 = flame.get_transfer(
         cameras=torch.inverse(dummy_frame.cameras.R.to(args.data_device)),
         shape_params=dummy_frame.shape,
@@ -645,6 +667,7 @@ def from_mesh_to_point(dataset, model, args, merge_iden=True):
         eyelid_params=zeros_eyelids  # 2
     )
     for params in tqdm(output_list):
+        # TODO: pass neck / translation here?
         J_transformed, A = flame.get_transfer(
             cameras=torch.inverse(params.cameras.R.to(args.data_device)),
             shape_params=params.shape,

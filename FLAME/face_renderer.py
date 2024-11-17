@@ -81,12 +81,13 @@ def render(viewpoint_camera, pcs: List[GaussianModel], pipe,
 
     rasterizer = GaussianRasterizer(raster_settings=raster_settings)
 
+    # means3D = xyz.clone()
     means3D = xyz
 
-    # TODO: revisit this - change Amitay suggested
-    means3D[:, 1] = -means3D[:, 1]
-    means3D[:, 2] = -means3D[:, 2]
-    means3D[:, 2] = means3D[:, 2] + 3
+    # # TODO: revisit this - change Amitay suggested
+    # means3D[:, 1] = -means3D[:, 1]
+    # means3D[:, 2] = -means3D[:, 2]
+    # means3D[:, 2] = means3D[:, 2] + 3
 
     # TODO: do I need to change the 2D ?
     means2D = screenspace_points
@@ -203,11 +204,13 @@ def render_alpha(viewpoint_camera, pcs: List[GaussianModel], pipe,
 
     rasterizer = GaussianRasterizer(raster_settings=raster_settings)
 
+    # means3D = xyz.clone()
     means3D = xyz
-    # TODO: revisit this - change Amitay suggested
-    means3D[:, 1] = -means3D[:, 1]
-    means3D[:, 2] = -means3D[:, 2]
-    means3D[:, 2] = means3D[:, 2] + 3
+    # # TODO: revisit this - change Amitay suggested
+    # means3D[:, 1] = -means3D[:, 1]
+    # means3D[:, 2] = -means3D[:, 2]
+    # means3D[:, 2] = means3D[:, 2] - 3
+    # means3D[:, 2] = means3D[:, 2] + 3
 
 
     means2D = screenspace_points
