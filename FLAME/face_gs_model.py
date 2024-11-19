@@ -299,6 +299,7 @@ class GaussianModel:
         verts = verts + (eye_blendshape * eyelid_params).sum(-1)
 
         vertices = verts
+        # vertices = vertices - trans_params.unsqueeze(dim=1)
         vertices = vertices + trans_params.unsqueeze(dim=1)
         # TODO: add the means3D like offset here?
         return vertices, T_diff, processed_rotation, processed_features
@@ -423,9 +424,13 @@ class GaussianModel:
                 eye_pose_params=params.eyes, # 12
                 jaw_pose_params=params.jaw, # 6
                 eyelid_params=params.eyelids, # 2
-                trans_params=params.translation if hasattr(params, 'translation') else None,
+                # trans_params=params.translation if hasattr(params, 'translation') else None,
                 neck_pose_params=params.neck if hasattr(params, 'neck') else None
             )
+
+            vertices[:, :, 0] = -vertices[:, :, 0]
+            vertices[:, :, 2] = -vertices[:, :, 2]
+            vertices[:, :, 2] = vertices[:, :, 2] + 3.0
 
             #albedos = self.albedos
 
@@ -506,7 +511,7 @@ class GaussianModel:
                 eye_pose_params=zeros_eyes, # 12
                 jaw_pose_params=zeros_jaw, # 6
                 eyelid_params=zeros_eyelids, # 2
-                trans_params=params.translation if hasattr(params, 'translation') else None,
+                # trans_params=params.translation if hasattr(params, 'translation') else None,  # TODO: remove this?
                 neck_pose_params=params.neck if hasattr(params, 'neck') else None
             )
 

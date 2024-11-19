@@ -137,6 +137,10 @@ class FaceDataset:
         proj[2, 2] = z_sign * zfar / (zfar - znear)
         proj[2, 3] = -(zfar * znear) / (zfar - znear)
 
+        # NOTE: added this factor 2.0 due to comparison with Amitay's repo
+        proj[0, 0] = proj[0, 0] * 2.0
+        proj[1, 1] = proj[1, 1] * 2.0
+
         proj_w2c = proj @ w2c
         t_proj_w2c = torch.from_numpy(proj_w2c.transpose()).float().to(device)
 

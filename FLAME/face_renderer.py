@@ -84,10 +84,10 @@ def render(viewpoint_camera, pcs: List[GaussianModel], pipe,
     # means3D = xyz.clone()
     means3D = xyz
 
-    # # TODO: revisit this - change Amitay suggested
-    # means3D[:, 1] = -means3D[:, 1]
-    # means3D[:, 2] = -means3D[:, 2]
-    # means3D[:, 2] = means3D[:, 2] + 3
+    # # # TODO: revisit this - change Amitay suggested
+    means3D[:, 0] = -means3D[:, 0]
+    means3D[:, 2] = -means3D[:, 2]
+    means3D[:, 2] = means3D[:, 2] + 3.0
 
     # TODO: do I need to change the 2D ?
     means2D = screenspace_points
@@ -206,11 +206,10 @@ def render_alpha(viewpoint_camera, pcs: List[GaussianModel], pipe,
 
     # means3D = xyz.clone()
     means3D = xyz
-    # # TODO: revisit this - change Amitay suggested
-    # means3D[:, 1] = -means3D[:, 1]
-    # means3D[:, 2] = -means3D[:, 2]
-    # means3D[:, 2] = means3D[:, 2] - 3
-    # means3D[:, 2] = means3D[:, 2] + 3
+    # # # TODO: revisit this - change Amitay suggested
+    means3D[:, 0] = -means3D[:, 0]
+    means3D[:, 2] = -means3D[:, 2]
+    means3D[:, 2] = means3D[:, 2] + 3.0
 
 
     means2D = screenspace_points
@@ -251,7 +250,7 @@ def render_alpha(viewpoint_camera, pcs: List[GaussianModel], pipe,
             "alpha0": alpha0,
             "viewspace_points": screenspace_points,
             "visibility_filter" : radii > 0,
-            "radii": radii}
+            "radii": radii.float()}
 
 def get_depth(viewpoint_cameras, pcs: List[GaussianModel]):
     n = len(pcs)

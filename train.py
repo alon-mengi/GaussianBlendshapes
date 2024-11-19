@@ -156,7 +156,7 @@ def training(args, testing_iterations, checkpoint_iterations, debug_from):
     else:
         mouth_offset = np.array([3.3226e-4, 2.29566e-3, -1.21933e-3], dtype=np.float32)   # TODO: this varies per presenter - how do i get it for my custom one?
 
-    cylinder_params = args.cylinder_params
+    cylinder_params = args.cylinder_params  # TODO: maybe larger radius and height? change the args
     bounding_cylinder = mouth_model.BoundingCylinder(
         np.array(cylinder_params[:3], dtype=np.float32) + mouth_offset,
         R=cylinder_params[3], half_H=cylinder_params[4]
@@ -166,6 +166,7 @@ def training(args, testing_iterations, checkpoint_iterations, debug_from):
     mouth_gaussians_down = mouth_model.GaussianModel(args.sh_degree, 1)   # down teeth
 
     ##
+    # TODO: the initialization here gets xyz centered around zero, far from the ones we get from the face-GS model
     mouth_gaussians_up.create_from_face(mouth_file0, mouth_offset, args, args.camera_extent)
     mouth_gaussians_down.create_from_face(mouth_file1, mouth_offset, args, args.camera_extent)
 
@@ -320,7 +321,10 @@ def training(args, testing_iterations, checkpoint_iterations, debug_from):
             if iteration == args.iterations:
                 progress_bar.close()
 
-            training_report(tb_writer, iteration, Ll1, loss, l1_loss_pixel, iter_start.elapsed_time(iter_end), testing_iterations, gaussians, dataset,  (args, background))
+            try:
+                training_report(tb_writer, iteration, Ll1, loss, l1_loss_pixel, iter_start.elapsed_time(iter_end), testing_iterations, gaussians, dataset,  (args, background))
+            except:
+                print('failed to log to tensorboard')
 
             # Densification
             if args.use_dyn_point:

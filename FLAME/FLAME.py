@@ -205,6 +205,7 @@ class FLAME(nn.Module):
         I = matrix_to_rotation_6d(torch.cat([torch.eye(3)[None]] * batch_size, dim=0).cuda())
 
         if trans_params is None:
+            # TODO: what to do with this?
             trans_params = torch.zeros(batch_size, 3).cuda()
         if rot_params is None:
             rot_params = I.clone()
@@ -228,7 +229,7 @@ class FLAME(nn.Module):
         # FLAME models shape and expression deformations as vertex offset from the mean face in 'zero pose', called v_template
         template_vertices = self.v_template.unsqueeze(0).expand(batch_size, -1, -1)
 
-        # Use linear blendskinning to model pose roations
+        # Use linear blendskinning to model pose rotations
         J_transformed, A = lbs_trans(betas, full_pose, template_vertices,
                                      self.shapedirs, self.posedirs,
                                      self.J_regressor, self.parents,
@@ -266,9 +267,9 @@ class FLAME(nn.Module):
 
         # Use linear blendskinning to model pose roations
         final_trans = lbs_jaw(betas, full_pose, template_vertices,
-                          self.shapedirs, self.posedirs,
-                          self.J_regressor, self.parents,
-                          self.lbs_weights, dtype=self.dtype)
+                              self.shapedirs, self.posedirs,
+                              self.J_regressor, self.parents,
+                              self.lbs_weights, dtype=self.dtype)
         return final_trans
 
 
@@ -326,7 +327,6 @@ class FLAME(nn.Module):
             vertices = vertices + self.l_eyelid.expand(batch_size, -1, -1) * eyelid_params[:, 0:1, None]
 
         vertices = vertices + trans_params.unsqueeze(dim=1)
-        vertices = self.to_pytroch3d_convention(vertices)
 
         lmk_faces_idx = self.lmk_faces_idx.unsqueeze(dim=0).expand(batch_size, -1).contiguous()
         lmk_bary_coords = self.lmk_bary_coords.unsqueeze(dim=0).expand(batch_size, -1, -1).contiguous()

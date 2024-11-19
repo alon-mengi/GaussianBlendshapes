@@ -181,7 +181,7 @@ class GaussianModel:
             features_rest = self._features_rest
             _features = torch.cat((features_dc, features_rest), dim=1)  # BxLx3
             self.processed_features = RotSH3_C3(frameNR, _features)
-
+        # TODO: I still get here pos_after's Z range is around 3 and not 4+
         elif self.model_type == 1:
             ###### Move with jaw
             ## transfer position
@@ -287,7 +287,7 @@ class GaussianModel:
 
         opacities = inverse_sigmoid(0.1 * torch.ones((point_vertices.shape[0], 1), dtype=torch.float, device="cuda"))
 
-        self._xyz = nn.Parameter(point_vertices.requires_grad_(True))
+        self._xyz = nn.Parameter(point_vertices.requires_grad_(True))   # TODO: do I need to add translation?
         self._features_dc = nn.Parameter(features[:, :, 0:1].transpose(1, 2).contiguous().requires_grad_(True))
         self._features_rest = nn.Parameter(features[:, :, 1:].transpose(1, 2).contiguous().requires_grad_(True))
         self._scaling = nn.Parameter(scales.requires_grad_(True))

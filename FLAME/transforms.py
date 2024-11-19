@@ -418,7 +418,7 @@ def get_rest_pose_vertices(face_gaussians, dummy_frame, args):
         eye_pose_params=zeros_eyes,
         jaw_pose_params=zeros_jaw,
         eyelid_params=zeros_eyelids,
-        trans_params=dummy_frame.translation if hasattr(dummy_frame, 'translation') else None,
+        # trans_params=dummy_frame.translation if hasattr(dummy_frame, 'translation') else None,   # TODO: remove this?
         neck_pose_params=dummy_frame.neck if hasattr(dummy_frame, 'neck') else None
     )
     vertices0 = vertices0[0]   # BxPx3 -> Px3
@@ -502,7 +502,8 @@ def rigid_transfer_for_mouth2(dataset, model, args):
         expression_params=zeros_exp,
         eye_pose_params=zeros_eyes,
         jaw_pose_params=zeros_jaw,
-        eyelid_params=zeros_eyelids
+        eyelid_params=zeros_eyelids,
+        neck_pose_params=dummy_frame.neck if hasattr(dummy_frame, 'neck') else None
     )
     #model.jawTrans0 = jawTrans0
 
@@ -515,7 +516,9 @@ def rigid_transfer_for_mouth2(dataset, model, args):
             expression_params=params.exp,
             eye_pose_params=params.eyes,  # 12
             jaw_pose_params=params.jaw,  # 6
-            eyelid_params=params.eyelids  # 2
+            eyelid_params=params.eyelids,  # 2
+            neck_pose_params=params.neck if hasattr(params, 'neck') else None,
+            # trans_params=params.translation if hasattr(params, 'translation') else None  # TODO: return this
         ) # 4x4
         # p
         rjawTrans = torch.eye(4,device=jawTrans.device) + jawTrans - jawTrans0
@@ -552,7 +555,7 @@ def rigid_transfer(dataset, model, args, gen_local_frame = True, gpu_side = True
         eye_pose_params=zeros_eyes,
         jaw_pose_params=zeros_jaw,
         eyelid_params=zeros_eyelids,
-        trans_params=dummy_frame.translation if hasattr(dummy_frame, 'translation') else None,
+        # trans_params=dummy_frame.translation if hasattr(dummy_frame, 'translation') else None,    # TODO: remove this from frame 0?
         neck_pose_params=dummy_frame.neck if hasattr(dummy_frame, 'neck') else None
     )
     vertices0 = vertices0[0] # BxPx3 -> Px3
@@ -664,7 +667,8 @@ def from_mesh_to_point(dataset, model, args, merge_iden=True):
         expression_params=zeros_exp,
         eye_pose_params=zeros_eyes,  # 12
         jaw_pose_params=zeros_jaw,  # 6
-        eyelid_params=zeros_eyelids  # 2
+        eyelid_params=zeros_eyelids,  # 2
+        neck_pose_params=dummy_frame.neck if hasattr(dummy_frame, 'neck') else None
     )
     for params in tqdm(output_list):
         # TODO: pass neck / translation here?
@@ -674,7 +678,9 @@ def from_mesh_to_point(dataset, model, args, merge_iden=True):
             expression_params=params.exp,
             eye_pose_params=params.eyes,  # 12
             jaw_pose_params=params.jaw,  # 6
-            eyelid_params=params.eyelids  # 2
+            eyelid_params=params.eyelids,  # 2
+            neck_pose_params=params.neck if hasattr(params, 'neck') else None,
+            # trans_params=params.translation if hasattr(params, 'translation') else None # TODO: return this
         )
         trans = torch.eye(4,device=A.device) + A - A0
         #transN = normalize_transform(trans[:,:3,:3])
