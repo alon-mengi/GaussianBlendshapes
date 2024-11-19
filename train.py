@@ -533,7 +533,3 @@ def train():
 
 if __name__ == "__main__":
     train()
-
-    # a = torch.load('/data/repos/GaussianBlendshapes/pre-processed-data/justin/checkpoint/02449.frame')
-    # b = torch.load('/data/repos/GaussianBlendshapes/pre-processed-data/justin/checkpoint/00000.frame')
-    # print('success')
